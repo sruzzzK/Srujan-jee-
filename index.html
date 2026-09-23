@@ -192,15 +192,16 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
     </section>
 
     <section id="page-planner" class="page">
-      <div class="topbar"><div><div class="page-title">Daily Planner</div><div class="page-sub">Today's goals only. Keep it simple enough to actually use.</div></div><button class="btn dark" onclick="openGoalModal()">+ Add goal</button></div>
+      <div class="topbar"><div><div class="page-title">Daily Planner</div><div class="page-sub">Your goals are saved by date. Browse any day to see exactly what was planned and completed.</div></div><button class="btn dark" onclick="openGoalModal()">+ Add goal</button></div>
+      <div class="card" style="margin-bottom:14px"><div class="section-head" style="margin-bottom:0"><button class="btn" onclick="changePlannerDate(-1)">← Previous</button><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center"><input id="plannerDatePicker" type="date" onchange="setPlannerDate(this.value)" style="border:1px solid var(--line2);border-radius:10px;padding:9px;background:#fff"><button class="btn" onclick="setPlannerDate(todayKey())">Today</button></div><button class="btn" onclick="changePlannerDate(1)">Next →</button></div></div>
       <div class="grid dashboard-grid">
         <div class="card"><div class="section-head"><h2 id="plannerDate"></h2><span class="chip" id="plannerSummary">0/0</span></div><div id="plannerGoals" class="goal-list"></div></div>
-        <div class="card"><div class="section-head"><h2>How to use this</h2></div><p class="small" style="line-height:1.7">Put the 3–6 things you genuinely intend to do today. Use the subject/chapter fields when useful. Unfinished goals remain visible so you can decide what to carry forward.</p><hr><div id="routineNote" class="small"></div></div>
+        <div class="card"><div class="section-head"><h2>How to use this</h2></div><p class="small" style="line-height:1.7">Every goal belongs to a specific date. Changing the date does not clear or overwrite anything — it simply opens that day's saved list.</p><hr><div id="routineNote" class="small"></div></div>
       </div>
     </section>
 
     <section id="page-priority" class="page">
-      <div class="topbar"><div><div class="page-title">Priority Queue</div><div class="page-sub">A short list of chapters that deserve attention next.</div></div></div>
+      <div class="topbar"><div><div class="page-title">Priority Queue</div><div class="page-sub">Your manually chosen chapter queue. Add, remove, and reorder anything you want.</div></div><button class="btn dark" onclick="openPriorityModal()">+ Add chapter</button></div>
       <div class="card"><div id="priorityFull" class="priority-list"></div></div>
     </section>
 
@@ -289,7 +290,7 @@ function makeChapter(subject,name,unit,index){
 function initialState(){
   const chapters={};
   Object.entries(chapterSeed).forEach(([s,arr])=>chapters[s]=arr.map((x,i)=>makeChapter(s,x[0],x[1],i+1)));
-  return {chapters,goals:[],mistakes:[],mocks:[]};
+  return {chapters,goals:[],mistakes:[],mocks:[],priorityQueue:[]};
 }
 let state=loadState();
 let currentSubject='physics', currentChapterId=null;
@@ -310,6 +311,7 @@ function normalizeState(s){
     s.chapters[sub]=base.chapters[sub].map(c=>({...c,...(byName.get(c.name)||{})}));
   }
   s.goals=Array.isArray(s.goals)?s.goals:[];s.mistakes=Array.isArray(s.mistakes)?s.mistakes:[];s.mocks=Array.isArray(s.mocks)?s.mocks:[];
+  s.priorityQueue=Array.isArray(s.priorityQueue)?s.priorityQueue:[];
   return s;
 }
 function save(){localStorage.setItem('srujan-jee-command-center',JSON.stringify(state));}
@@ -332,8 +334,11 @@ function daysLeft(){
 function statusClass(s){return 'status-'+s}
 function statusLabel(s){return s==='green'?'Strong':s==='orange'?'Developing':'Weak'}
 function getChapter(s,id){return state.chapters[s].find(c=>c.id===id)}
-function todayKey(){const d=new Date();return d.toISOString().slice(0,10)}
-function todayLabel(){return new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function localDateKey(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+function todayKey(){return localDateKey()}
+function dateFromKey(key){const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d)}
+function dateLabel(key){return dateFromKey(key).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function todayLabel(){return dateLabel(todayKey())}
 function showPage(page){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   const el=document.getElementById('page-'+page);if(el)el.classList.add('active');
@@ -432,38 +437,67 @@ function removeRevision(id,i){
   const s=findSubjectByChapterId(id),c=getChapter(s,id);c.revisions.splice(i,1);c.revisions.forEach((r,j)=>r.n=j+1);save();openChapter(id);refreshAll();
 }
 
+let plannerDateKey=todayKey();
 function renderGoals(target){
   const arr=state.goals.filter(g=>g.date===todayKey());
   document.getElementById(target).innerHTML=arr.length?arr.map(g=>goalHTML(g)).join(''):'<div class="empty">No goals yet. Add the few things you actually intend to finish today.</div>';
 }
 function goalHTML(g){return `<div class="goal-item ${g.done?'done':''}"><input class="check" type="checkbox" ${g.done?'checked':''} onchange="toggleGoal('${g.id}')"><div class="goal-text"><strong>${escapeHtml(g.text)}</strong><div class="small">${g.subject?subjectMeta[g.subject].name:''}${g.chapter?' • '+escapeHtml(g.chapter):''}</div></div><button class="btn" onclick="deleteGoal('${g.id}')">×</button></div>`}
 function openGoalModal(){
-  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Daily planner</div><h2>Add today's goal</h2></div><button class="btn" onclick="closeModal()">✕</button></div>
+  const label=dateLabel(plannerDateKey);
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Daily planner</div><h2>Add goal for ${escapeHtml(label)}</h2></div><button class="btn" onclick="closeModal()">✕</button></div>
   <div class="form-grid"><div class="field full"><label>Goal</label><input id="goalText" placeholder="e.g. Finish 40 AC PYQs"></div><div class="field"><label>Subject</label><select id="goalSubject"><option value="">None</option>${Object.entries(subjectMeta).map(([s,m])=>`<option value="${s}">${m.name}</option>`).join('')}</select></div><div class="field"><label>Chapter (optional)</label><input id="goalChapter" placeholder="Chapter name"></div></div>
   <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="saveGoal()">Add goal</button></div>`;openModal();document.getElementById('goalText').focus();
 }
-function saveGoal(){const text=document.getElementById('goalText').value.trim();if(!text)return;state.goals.push({id:crypto.randomUUID(),date:todayKey(),text,subject:document.getElementById('goalSubject').value,chapter:document.getElementById('goalChapter').value.trim(),done:false});save();closeModal();refreshAll();toast('Goal added')}
+function saveGoal(){const text=document.getElementById('goalText').value.trim();if(!text)return;state.goals.push({id:crypto.randomUUID(),date:plannerDateKey,text,subject:document.getElementById('goalSubject').value,chapter:document.getElementById('goalChapter').value.trim(),done:false});save();closeModal();refreshAll();toast('Goal added')}
 function toggleGoal(id){const g=state.goals.find(x=>x.id===id);if(g)g.done=!g.done;save();refreshAll();if(document.getElementById('page-planner').classList.contains('active'))renderPlanner()}
 function deleteGoal(id){state.goals=state.goals.filter(g=>g.id!==id);save();refreshAll();renderPlanner()}
+function setPlannerDate(key){if(!/^\d{4}-\d{2}-\d{2}$/.test(key))return;plannerDateKey=key;renderPlanner()}
+function changePlannerDate(delta){const d=dateFromKey(plannerDateKey);d.setDate(d.getDate()+delta);setPlannerDate(localDateKey(d))}
 
-function priorityData(){
-  const all=Object.entries(state.chapters).flatMap(([s,arr])=>arr.map(c=>{
+function defaultPriorityIds(){
+  return Object.entries(state.chapters).flatMap(([s,arr])=>arr.map(c=>{
     const p=chapterProgress(c);let score=(1-p)*70+(c.status==='red'?30:c.status==='orange'?15:0);
     if(c.revisions.length===0)score+=5;
-    return {s,c,score};
-  })).sort((a,b)=>b.score-a.score);
-  return all.slice(0,10);
+    return {c,score};
+  })).sort((a,b)=>b.score-a.score).slice(0,10).map(x=>x.c.id);
 }
-function priorityHTML(x){
-  const {s,c,score}=x;return `<div class="priority-item"><div style="display:flex;justify-content:space-between;gap:10px"><div><strong>${subjectMeta[s].name} · ${escapeHtml(c.name)}</strong><div class="small">${escapeHtml(c.unit)} · ${statusLabel(c.status)} · ${Math.round(chapterProgress(c)*100)}% complete</div></div><div class="priority-score">${Math.round(score)}</div></div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,score)}%"></div></div><button class="btn" onclick="openChapter('${c.id}')">Open chapter</button></div>`;
+function ensurePriorityQueue(){
+  if(!Array.isArray(state.priorityQueue))state.priorityQueue=[];
+  if(state.priorityQueue.length===0){state.priorityQueue=defaultPriorityIds();save();}
+  const allIds=new Set(Object.values(state.chapters).flat().map(c=>c.id));
+  state.priorityQueue=state.priorityQueue.filter(id=>allIds.has(id));
 }
-function renderPriority(target='priorityFull',limit=10){document.getElementById(target).innerHTML=priorityData().slice(0,limit).map(priorityHTML).join('')||'<div class="empty">Nothing to prioritize.</div>'}
+function priorityData(){
+  ensurePriorityQueue();
+  return state.priorityQueue.map(id=>{const s=findSubjectByChapterId(id),c=s?getChapter(s,id):null;return c?{s,c}:null}).filter(Boolean);
+}
+function priorityHTML(x,index,total,target='priorityFull'){
+  const {s,c}=x;
+  return `<div class="priority-item"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><strong>${index+1}. ${subjectMeta[s].name} · ${escapeHtml(c.name)}</strong><div class="small">${escapeHtml(c.unit)} · ${statusLabel(c.status)} · ${Math.round(chapterProgress(c)*100)}% complete</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" ${index===0?'disabled':''} onclick="movePriority('${c.id}',-1)">↑</button><button class="btn" ${index===total-1?'disabled':''} onclick="movePriority('${c.id}',1)">↓</button><button class="btn" onclick="removePriority('${c.id}')">Remove</button></div></div><div class="progress-track"><div class="progress-fill" style="width:${Math.round(chapterProgress(c)*100)}%"></div></div><button class="btn" onclick="openChapter('${c.id}')">Open chapter</button></div>`;
+}
+function renderPriority(target='priorityFull',limit=10){
+  const arr=priorityData().slice(0,limit);
+  document.getElementById(target).innerHTML=arr.map((x,i)=>priorityHTML(x,i,arr.length,target)).join('')||'<div class="empty">Nothing in your priority queue. Add the chapters you want to focus on.</div>';
+}
+function openPriorityModal(){
+  ensurePriorityQueue();
+  const queued=new Set(state.priorityQueue);
+  const options=Object.entries(subjectMeta).map(([s,m])=>`<optgroup label="${m.name}">${state.chapters[s].filter(c=>!queued.has(c.id)).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</optgroup>`).join('');
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Priority Queue</div><h2>Add a chapter</h2></div><button class="btn" onclick="closeModal()">✕</button></div><div class="field"><label>Chapter</label><select id="priorityChapter">${options||'<option value="">All chapters are already queued</option>'}</select></div><div class="small" style="margin-top:10px">The queue is manual. Adding a chapter puts it at the bottom; use ↑/↓ to reorder it.</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="savePriority()" ${options?'':'disabled'}>Add chapter</button></div>`;
+  openModal();
+}
+function savePriority(){const id=document.getElementById('priorityChapter').value;if(!id)return;ensurePriorityQueue();if(!state.priorityQueue.includes(id))state.priorityQueue.push(id);save();closeModal();refreshAll();toast('Priority added')}
+function movePriority(id,delta){ensurePriorityQueue();const i=state.priorityQueue.indexOf(id),j=i+delta;if(i<0||j<0||j>=state.priorityQueue.length)return;[state.priorityQueue[i],state.priorityQueue[j]]=[state.priorityQueue[j],state.priorityQueue[i]];save();refreshAll();}
+function removePriority(id){state.priorityQueue=state.priorityQueue.filter(x=>x!==id);save();refreshAll();toast('Removed from priority queue')}
 
 function renderPlanner(){
-  document.getElementById('plannerDate').textContent=todayLabel();const arr=state.goals.filter(g=>g.date===todayKey());const done=arr.filter(g=>g.done).length;
+  document.getElementById('plannerDate').textContent=dateLabel(plannerDateKey);
+  const picker=document.getElementById('plannerDatePicker');if(picker)picker.value=plannerDateKey;
+  const arr=state.goals.filter(g=>g.date===plannerDateKey);const done=arr.filter(g=>g.done).length;
   document.getElementById('plannerSummary').textContent=`${done}/${arr.length} complete`;
-  document.getElementById('plannerGoals').innerHTML=arr.length?arr.map(g=>goalHTML(g)).join(''):'<div class="empty">Your day is blank. Add 3–6 realistic goals.</div>';
-  document.getElementById('routineNote').textContent='Your current routine is roughly 5–6 focused study hours on institute days and about 9–10 focused hours on non-institute days. Use the planner to choose work, not to chase an arbitrary hour count.';
+  document.getElementById('plannerGoals').innerHTML=arr.length?arr.map(g=>goalHTML(g)).join(''):'<div class="empty">No goals saved for this date.</div>';
+  document.getElementById('routineNote').textContent='Browse backward or forward to review your exact goals for any saved day. Nothing is cleared when the date changes.';
 }
 function renderMistakes(){
   const el=document.getElementById('mistakeList');el.innerHTML=state.mistakes.length?state.mistakes.slice().reverse().map(m=>`<div class="mistake-item"><div style="display:flex;justify-content:space-between;gap:10px"><div><strong>${escapeHtml(m.chapter||'General')}</strong><div class="small">${subjectMeta[m.subject]?.name||'—'}${m.note?' · '+escapeHtml(m.note):''}</div></div><button class="btn" onclick="deleteMistake('${m.id}')">×</button></div><div style="margin-top:8px;display:flex;justify-content:space-between;gap:10px;align-items:center"><span class="small">${escapeHtml(m.text)}</span><label class="chip"><input class="check" type="checkbox" ${m.resolved?'checked':''} onchange="toggleMistake('${m.id}')"> Resolved</label></div></div>`).join(''):'<div class="empty">No mistakes logged. Add only mistakes worth remembering.</div>';
