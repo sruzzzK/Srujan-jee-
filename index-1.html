@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Srujan — JEE Main 2027 Command Center</title>
+<style>
+:root{
+  --bg:#f5f5f5;--panel:#ffffff;--panel2:#fafafa;--text:#111;--muted:#707070;
+  --line:#e5e5e5;--line2:#d6d6d6;--black:#0b0b0b;--green:#2d7a46;--orange:#b46a00;--red:#b3261e;
+  --shadow:0 10px 35px rgba(0,0,0,.06);--radius:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:var(--black);color:#fff;position:fixed;left:0;top:0;bottom:0;padding:22px 16px;z-index:20}
+.brand{font-weight:800;font-size:18px;letter-spacing:-.03em;padding:6px 10px 24px}
+.brand small{display:block;color:#9b9b9b;font-weight:500;font-size:11px;margin-top:4px}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{border:0;background:transparent;color:#aaa;text-align:left;padding:12px 12px;border-radius:11px}
+.nav button:hover,.nav button.active{background:#202020;color:#fff}
+.sidebar-foot{position:absolute;left:16px;right:16px;bottom:20px;color:#777;font-size:11px;line-height:1.5}
+.main{margin-left:245px;width:calc(100% - 245px);padding:28px;max-width:1500px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:22px}
+.page-title{font-size:27px;font-weight:800;letter-spacing:-.04em}
+.page-sub{color:var(--muted);font-size:13px;margin-top:4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line2);background:#fff;color:#111;border-radius:11px;padding:9px 13px}
+.btn:hover{background:#f0f0f0}
+.btn.dark{background:#111;color:#fff;border-color:#111}
+.btn.danger{color:var(--red)}
+.grid{display:grid;gap:14px}
+.kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.kpi-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.kpi-value{font-size:31px;font-weight:800;letter-spacing:-.05em;margin-top:8px}
+.kpi-note{font-size:12px;color:var(--muted);margin-top:5px}
+.dashboard-grid{grid-template-columns:1.2fr .8fr}
+.subject-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.subject-card{min-height:170px;display:flex;flex-direction:column;justify-content:space-between;transition:.15s}
+.subject-card:hover{transform:translateY(-2px)}
+.subject-name{font-size:21px;font-weight:800}
+.progress-track{height:8px;background:#ececec;border-radius:999px;overflow:hidden;margin:12px 0}
+.progress-fill{height:100%;background:#111;border-radius:999px;transition:width .25s}
+.subject-card .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.goal-list,.priority-list,.mistake-list,.weekly-list{display:flex;flex-direction:column;gap:9px}
+.weekly-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.weekly-tab{border:1px solid var(--line2);background:#fff;color:#666;border-radius:999px;padding:8px 13px;font-size:12px}
+.weekly-tab.active{background:#111;color:#fff;border-color:#111}
+.week-nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.week-title{text-align:center;font-weight:800;font-size:18px;letter-spacing:-.02em}
+.week-range{font-size:12px;color:var(--muted);font-weight:500;margin-top:3px}
+.weekly-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel2)}
+.weekly-item.done .weekly-chapter{text-decoration:line-through;color:#888}
+.weekly-chapter{flex:1;font-weight:700}
+.weekly-summary{display:flex;gap:8px;flex-wrap:wrap}
+.weekly-stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fafafa;min-width:105px}
+.weekly-stat strong{display:block;font-size:19px}
+.weekly-stat span{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.07em}
+
+.goal-item,.priority-item,.mistake-item{border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--panel2)}
+.goal-item{display:flex;align-items:center;gap:10px}
+.goal-item.done .goal-text{text-decoration:line-through;color:#888}
+.goal-text{flex:1}
+.small{font-size:12px;color:var(--muted)}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
+.section-head h2{font-size:17px;margin:0;letter-spacing:-.02em}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.search{min-width:230px;flex:1;border:1px solid var(--line2);border-radius:11px;padding:10px 12px;background:#fff}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;vertical-align:middle}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#777;background:#fafafa;position:sticky;top:0;z-index:2}
+tr:last-child td{border-bottom:0}
+.chapter-link{border:0;background:transparent;padding:0;text-align:left;font-weight:700;color:#111}
+.chapter-link:hover{text-decoration:underline}
+.check{width:18px;height:18px;accent-color:#111}
+.status-dot{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);padding:5px 8px;border-radius:999px;background:#fff;font-size:11px}
+.status-dot i{width:8px;height:8px;border-radius:50%;display:block}
+.status-green i{background:var(--green)}.status-orange i{background:var(--orange)}.status-red i{background:var(--red)}
+.status-green{color:var(--green)}.status-orange{color:var(--orange)}.status-red{color:var(--red)}
+.unit-row td{background:#f3f3f3;font-weight:800;color:#555}
+.subject-header{display:flex;align-items:flex-end;justify-content:space-between;gap:15px;margin-bottom:18px}
+.subject-header h1{font-size:30px;margin:0;letter-spacing:-.05em}
+.subject-header p{color:var(--muted);margin:5px 0 0}
+.back{margin-bottom:15px}
+.chip{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:11px;background:#fff;color:#555}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
+.modal-backdrop.open{display:flex}
+.modal{background:#fff;border-radius:20px;width:min(780px,100%);max-height:92vh;overflow:auto;padding:22px;box-shadow:0 25px 80px rgba(0,0,0,.25)}
+.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.modal h2{margin:0;font-size:24px;letter-spacing:-.04em}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+.field label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.07em}
+.field input,.field select,.field textarea{border:1px solid var(--line2);border-radius:10px;padding:10px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+.milestones{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:15px 0}
+.milestone{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafafa}
+.milestone label{display:flex;align-items:center;gap:8px;font-size:12px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-box{border:1px solid var(--line);border-radius:13px;padding:13px}
+.detail-box h3{font-size:12px;margin:0 0 8px;text-transform:uppercase;color:#777;letter-spacing:.07em}
+.revision-row{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:9px 0;font-size:12px}
+.priority-score{font-weight:800}
+.range{width:100%}
+.progress-big{font-size:38px;font-weight:900;letter-spacing:-.06em}
+.page{display:none}.page.active{display:block}
+.empty{padding:30px;text-align:center;color:#777}
+.mock-grid{grid-template-columns:.8fr 1.2fr}
+.mock-form{display:flex;flex-direction:column;gap:10px}
+.mock-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mock-list{display:flex;flex-direction:column;gap:8px;max-height:430px;overflow:auto}
+.mock-item{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);padding:11px;border-radius:12px}
+.canvas-wrap{height:260px;position:relative}
+canvas{width:100%;height:100%;display:block}
+.toast{position:fixed;bottom:22px;right:22px;background:#111;color:#fff;padding:11px 14px;border-radius:11px;opacity:0;transform:translateY(10px);transition:.2s;z-index:100;font-size:12px}
+.toast.show{opacity:1;transform:none}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#666}
+.legend span{display:flex;gap:6px;align-items:center}.legend i{width:8px;height:8px;border-radius:50%}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.mobile-nav{display:none}
+@media(max-width:1000px){
+  .sidebar{width:205px}.main{margin-left:205px;width:calc(100% - 205px);padding:20px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid,.mock-grid{grid-template-columns:1fr}
+}
+@media(max-width:720px){
+  .sidebar{display:none}.main{margin-left:0;width:100%;padding:14px;padding-bottom:80px}
+  .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#111;color:#fff;z-index:30;padding:7px;justify-content:space-around}
+  .mobile-nav button{background:none;border:0;color:#aaa;font-size:10px}.mobile-nav button.active{color:#fff}
+  .topbar{align-items:flex-start}.page-title{font-size:22px}.actions .btn{padding:8px}
+  .kpi-grid,.subject-grid{grid-template-columns:1fr 1fr}.subject-card{min-height:145px}
+  .form-grid,.detail-grid{grid-template-columns:1fr}.milestones{grid-template-columns:1fr 1fr}
+  .search{min-width:100%}
+}
+@media(max-width:430px){.kpi-grid,.subject-grid{grid-template-columns:1fr}.subject-header{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">SRUJAN // JEE COMMAND CENTER<small>JEE MAIN 2027 • SESSION 1</small></div>
+    <nav class="nav" id="nav">
+      <button data-page="dashboard" class="active">⌂ Dashboard</button>
+      <button data-page="subjects">◈ Subjects</button>
+      <button data-page="planner">▣ Daily Planner</button>
+      <button data-page="weekly">▤ Weekly Roadmap</button>
+      <button data-page="priority">◎ Priority Queue</button>
+      <button data-page="mistakes">✎ Mistake Log</button>
+      <button data-page="mocks">▥ Mock Scores</button>
+      <button data-page="settings">⚙ Data / Settings</button>
+    </nav>
+    <div class="sidebar-foot">Built around your actual PW + institute routine.<br>Keep the system useful; don't track things you won't use.</div>
+  </aside>
+
+  <main class="main">
+    <section id="page-dashboard" class="page active">
+      <div class="topbar">
+        <div><div class="page-title">Command Center</div><div class="page-sub">A clean view of what matters before Session 1.</div></div>
+        <div class="actions"><button class="btn dark" onclick="openGoalModal()">+ Goal</button><button class="btn" onclick="exportData()">Export</button></div>
+      </div>
+      <div class="grid kpi-grid">
+        <div class="card"><div class="kpi-label">Days left</div><div class="kpi-value" id="daysLeft">—</div><div class="kpi-note">Target: 22 Jan 2027</div></div>
+        <div class="card"><div class="kpi-label">Overall preparation</div><div class="kpi-value" id="overallPct">—</div><div class="kpi-note">Core syllabus milestones</div></div>
+        <div class="card"><div class="kpi-label">Today's goals</div><div class="kpi-value" id="goalCount">0/0</div><div class="kpi-note">Plan → execute → tick</div></div>
+        <div class="card"><div class="kpi-label">Weak chapters</div><div class="kpi-value" id="weakCount">0</div><div class="kpi-note">Red status</div></div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="grid subject-grid" id="subjectCards"></div>
+      <div style="height:14px"></div>
+      <div class="grid dashboard-grid">
+        <div class="card">
+          <div class="section-head"><h2>Today's goals</h2><button class="btn" onclick="openGoalModal()">Add</button></div>
+          <div id="dashboardGoals" class="goal-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><h2>Priority queue</h2><button class="btn" onclick="showPage('priority')">View all</button></div>
+          <div id="dashboardPriority" class="priority-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-subjects" class="page">
+      <div class="topbar"><div><div class="page-title">Subjects</div><div class="page-sub">Pick a subject; chapters stay inside their own section.</div></div></div>
+      <div class="grid subject-grid" id="subjectCardsLarge"></div>
+    </section>
+
+    <section id="page-subject" class="page">
+      <button class="btn back" onclick="showPage('subjects')">← Subjects</button>
+      <div class="subject-header">
+        <div><h1 id="subjectTitle">Physics</h1><p id="subjectSubtitle"></p></div>
+        <div class="chip" id="subjectPctChip">0%</div>
+      </div>
+      <div class="toolbar">
+        <input id="chapterSearch" class="search" placeholder="Search chapters…" oninput="renderSubjectTable()">
+        <select id="statusFilter" onchange="renderSubjectTable()"><option value="all">All statuses</option><option value="green">Green</option><option value="orange">Orange</option><option value="red">Red</option></select>
+        <select id="unitFilter" onchange="renderSubjectTable()"><option value="all">All units</option></select>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Chapter</th><th>Unit</th><th>Theory</th><th>Notes</th><th>Module</th><th>Main PYQs</th><th>Revisions</th><th>Status</th><th>Progress</th></tr></thead><tbody id="chapterBody"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-planner" class="page">
+      <div class="topbar"><div><div class="page-title">Daily Planner</div><div class="page-sub">Your goals are saved by date. Browse any day to see exactly what was planned and completed.</div></div><button class="btn dark" onclick="openGoalModal()">+ Add goal</button></div>
+      <div class="card" style="margin-bottom:14px"><div class="section-head" style="margin-bottom:0"><button class="btn" onclick="changePlannerDate(-1)">← Previous</button><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center"><input id="plannerDatePicker" type="date" onchange="setPlannerDate(this.value)" style="border:1px solid var(--line2);border-radius:10px;padding:9px;background:#fff"><button class="btn" onclick="setPlannerDate(todayKey())">Today</button></div><button class="btn" onclick="changePlannerDate(1)">Next →</button></div></div>
+      <div class="grid dashboard-grid">
+        <div class="card"><div class="section-head"><h2 id="plannerDate"></h2><span class="chip" id="plannerSummary">0/0</span></div><div id="plannerGoals" class="goal-list"></div></div>
+        <div class="card"><div class="section-head"><h2>How to use this</h2></div><p class="small" style="line-height:1.7">Every goal belongs to a specific date. Changing the date does not clear or overwrite anything — it simply opens that day's saved list.</p><hr><div id="routineNote" class="small"></div></div>
+      </div>
+    </section>
+
+    <section id="page-weekly" class="page">
+      <div class="topbar"><div><div class="page-title">Weekly Roadmap</div><div class="page-sub">Plan chapters ahead without turning the tracker into a giant timetable.</div></div><button class="btn dark" onclick="openWeeklyAddModal()">+ Add chapter</button></div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="week-nav">
+          <button class="btn" onclick="changeWeekly(-1)">← Previous</button>
+          <div class="week-title"><div id="weeklyTitle">This week</div><div id="weeklyRange" class="week-range"></div></div>
+          <button class="btn" onclick="changeWeekly(1)">Next →</button>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:10px"><button class="btn" onclick="setWeekly(todayKey())">This week</button></div>
+      </div>
+      <div class="weekly-tabs" id="weeklyTabs"></div>
+      <div class="grid dashboard-grid">
+        <div class="card"><div class="section-head"><h2 id="weeklySubjectTitle">Physics</h2><span class="chip" id="weeklySummary">0 chapters</span></div><div id="weeklyList" class="weekly-list"></div></div>
+        <div class="card"><div class="section-head"><h2>Week at a glance</h2></div><div id="weeklyStats" class="weekly-summary"></div><hr><div class="small" id="weeklyNote" style="line-height:1.7"></div></div>
+      </div>
+    </section>
+
+    <section id="page-priority" class="page">
+      <div class="topbar"><div><div class="page-title">Priority Queue</div><div class="page-sub">Your manually chosen chapter queue. Add, remove, and reorder anything you want.</div></div><button class="btn dark" onclick="openPriorityModal()">+ Add chapter</button></div>
+      <div class="card"><div id="priorityFull" class="priority-list"></div></div>
+    </section>
+
+    <section id="page-mistakes" class="page">
+      <div class="topbar"><div><div class="page-title">Mistake Log</div><div class="page-sub">Just enough detail to turn mistakes into revision material.</div></div><button class="btn dark" onclick="openMistakeModal()">+ Add mistake</button></div>
+      <div class="card"><div id="mistakeList" class="mistake-list"></div></div>
+    </section>
+
+    <section id="page-mocks" class="page">
+      <div class="topbar"><div><div class="page-title">Mock Scores</div><div class="page-sub">Simple score history. No bloated test-analysis bureaucracy.</div></div><button class="btn dark" onclick="openMockModal()">+ Add mock</button></div>
+      <div class="grid mock-grid">
+        <div class="card"><div class="section-head"><h2>Score trend</h2></div><div class="canvas-wrap"><canvas id="scoreCanvas"></canvas></div></div>
+        <div class="card"><div class="section-head"><h2>Mocks</h2></div><div id="mockList" class="mock-list"></div></div>
+      </div>
+    </section>
+
+    <section id="page-settings" class="page">
+      <div class="topbar"><div><div class="page-title">Data & Settings</div><div class="page-sub">Your tracker saves locally in this browser.</div></div></div>
+      <div class="grid dashboard-grid">
+        <div class="card">
+          <div class="section-head"><h2>Backup</h2></div>
+          <p class="small">Export a JSON backup periodically. Import it if you move to another browser/device.</p>
+          <div class="actions"><button class="btn dark" onclick="exportData()">Export JSON</button><label class="btn" style="display:inline-flex;align-items:center;gap:6px">Import JSON<input type="file" accept=".json" hidden onchange="importData(event)"></label></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><h2>Current preparation</h2></div>
+          <p class="small">The initial chapter states below are seeded from the progress you gave me. Change them freely as your preparation evolves.</p>
+          <div class="legend"><span><i style="background:var(--green)"></i>Strong</span><span><i style="background:var(--orange)"></i>Middle</span><span><i style="background:var(--red)"></i>Weak</span></div>
+          <hr><button class="btn danger" onclick="resetAll()">Reset all tracker data</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="mobile-nav" id="mobileNav">
+  <button data-page="dashboard" class="active">⌂<br>Home</button>
+  <button data-page="subjects">◈<br>Subjects</button>
+  <button data-page="planner">▣<br>Today</button>
+  <button data-page="priority">◎<br>Priority</button>
+  <button data-page="mistakes">✎<br>Mistakes</button>
+  <button data-page="mocks">▥<br>Mocks</button>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop" onclick="backdropClose(event)">
+  <div class="modal" id="modal"></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const TARGET = new Date('2027-01-22T00:00:00');
+const subjectMeta = {
+  physics:{name:'Physics',icon:'⚡',subtitle:'Mechanics → Electromagnetism → Optics → Modern Physics'},
+  chemistry:{name:'Chemistry',icon:'🧪',subtitle:'Physical + Inorganic + Organic Chemistry'},
+  maths:{name:'Mathematics',icon:'∑',subtitle:'Algebra + Calculus + Coordinate + Vector/3D + Statistics/Probability + Trigonometry'}
+};
+
+const chapterSeed = {
+physics:[
+['Units and Measurements','Units & Measurement'],['Kinematics (Motion in 1D & 2D)','Mechanics'],['Laws of Motion','Mechanics'],['Work, Power, and Energy','Mechanics'],['Rotational Motion','Mechanics'],['Gravitation','Mechanics'],['Mechanical Properties of Solids','Properties of Matter'],['Mechanical Properties of Fluids','Properties of Matter'],['Thermal Properties of Matter','Thermal Physics'],['Thermodynamics','Thermal Physics'],['Kinetic Theory of Gases','Thermal Physics'],['Oscillations (Simple Harmonic Motion)','Oscillations & Waves'],['Waves','Oscillations & Waves'],['Electrostatics','Electrostatics'],['Current Electricity','Electrostatics'],['Moving Charges and Magnetism','Electromagnetism'],['Magnetism and Matter','Electromagnetism'],['Electromagnetic Induction','Electromagnetism'],['Alternating Current','Electromagnetism'],['Electromagnetic Waves','Electromagnetism'],['Ray Optics and Optical Instruments','Optics'],['Wave Optics','Optics'],['Dual Nature of Radiation and Matter','Modern Physics'],['Atoms','Modern Physics'],['Nuclei','Modern Physics'],['Semiconductor Electronics','Modern Physics'],['Experimental Skills','Experimental Skills']
+],
+chemistry:[
+['Some Basic Concepts in Chemistry (Mole Concept)','Physical Chemistry'],['Structure of Atom','Physical Chemistry'],['Chemical Bonding and Molecular Structure','Physical Chemistry'],['Chemical Thermodynamics','Physical Chemistry'],['Solutions','Physical Chemistry'],['Chemical Equilibrium','Physical Chemistry'],['Ionic Equilibrium','Physical Chemistry'],['Redox Reactions','Physical Chemistry'],['Electrochemistry','Physical Chemistry'],['Chemical Kinetics','Physical Chemistry'],['Classification of Elements and Periodicity in Properties','Inorganic Chemistry'],['p-Block Elements','Inorganic Chemistry'],['d- and f-Block Elements','Inorganic Chemistry'],['Coordination Compounds','Inorganic Chemistry'],['Purification and Characterization of Organic Compounds','Organic Chemistry'],['Basic Principles of Organic Chemistry (GOC)','Organic Chemistry'],['Hydrocarbons','Organic Chemistry'],['Organic Compounds Containing Halogens (Haloalkanes & Haloarenes)','Organic Chemistry'],['Alcohols, Phenols, and Ethers','Organic Chemistry'],['Aldehydes, Ketones, and Carboxylic Acids','Organic Chemistry'],['Organic Compounds Containing Nitrogen (Amines)','Organic Chemistry'],['Biomolecules','Organic Chemistry'],['Principles Related to Practical Chemistry','Organic Chemistry']
+],
+maths:[
+['Sets, Relations, and Functions','Algebra'],['Complex Numbers','Algebra'],['Quadratic Equations','Algebra'],['Matrices','Algebra'],['Determinants','Algebra'],['Permutations and Combinations','Algebra'],['Mathematical Induction','Algebra'],['Binomial Theorem','Algebra'],['Sequences and Series','Algebra'],['Limits, Continuity, and Differentiability','Calculus'],['Application of Derivatives','Calculus'],['Indefinite Integrals','Calculus'],['Definite Integrals','Calculus'],['Differential Equations','Calculus'],['Straight Lines','Coordinate Geometry'],['Circles','Coordinate Geometry'],['Parabola','Coordinate Geometry'],['Ellipse','Coordinate Geometry'],['Hyperbola','Coordinate Geometry'],['Vector Algebra','Vector & 3D'],['Three-Dimensional Geometry','Vector & 3D'],['Statistics','Statistics & Probability'],['Probability','Statistics & Probability'],['Trigonometric Functions & Equations','Trigonometry'],['Inverse Trigonometric Functions','Trigonometry']
+]};
+
+const weakInitial = {
+physics:new Set(['Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Waves','Electromagnetic Waves','Ray Optics and Optical Instruments','Wave Optics','Semiconductor Electronics']),
+chemistry:new Set(['Solutions','Electrochemistry','Chemical Kinetics']),
+maths:new Set(['Parabola','Ellipse','Hyperbola','Complex Numbers','Statistics','Probability','Vector Algebra','Three-Dimensional Geometry','Trigonometric Functions & Equations'])
+};
+const partialInitial = {
+maths:new Set(['Trigonometric Functions & Equations'])
+};
+
+function makeChapter(subject,name,unit,index){
+  const weak=weakInitial[subject]?.has(name), partial=partialInitial[subject]?.has(name);
+  const done = !weak && !partial;
+  return {id:subject+'-'+index,name,unit,index,status:weak?'red':partial?'orange':'green',
+    theory:done,notes:done,module:done,pyq:done,revisions:done?[
+      {n:1,date:''}
+    ]:[],notesText:'',progressOverride:null};
+}
+function initialState(){
+  const chapters={};
+  Object.entries(chapterSeed).forEach(([s,arr])=>chapters[s]=arr.map((x,i)=>makeChapter(s,x[0],x[1],i+1)));
+  return {chapters,goals:[],mistakes:[],mocks:[],priorityQueue:[],weeklyPlans:{}};
+}
+let state=loadState();
+let currentSubject='physics', currentChapterId=null;
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem('srujan-jee-command-center');
+    if(raw){const s=JSON.parse(raw);return normalizeState(s);}
+  }catch(e){}
+  return initialState();
+}
+function normalizeState(s){
+  const base=initialState();
+  s.chapters=s.chapters||base.chapters;
+  for(const sub of Object.keys(base.chapters)){
+    const existing=Array.isArray(s.chapters[sub])?s.chapters[sub]:[];
+    const byName=new Map(existing.map(c=>[c.name,c]));
+    s.chapters[sub]=base.chapters[sub].map(c=>({...c,...(byName.get(c.name)||{})}));
+  }
+  s.goals=Array.isArray(s.goals)?s.goals:[];s.mistakes=Array.isArray(s.mistakes)?s.mistakes:[];s.mocks=Array.isArray(s.mocks)?s.mocks:[];
+  s.priorityQueue=Array.isArray(s.priorityQueue)?s.priorityQueue:[];
+  s.weeklyPlans=s.weeklyPlans&&typeof s.weeklyPlans==='object'?s.weeklyPlans:{};
+  for(const [wk,plan] of Object.entries(s.weeklyPlans)){
+    if(!plan||typeof plan!=='object')s.weeklyPlans[wk]={physics:[],chemistry:[],maths:[]};
+    for(const sub of Object.keys(subjectMeta)){
+      const arr=Array.isArray(s.weeklyPlans[wk][sub])?s.weeklyPlans[wk][sub]:[];
+      s.weeklyPlans[wk][sub]=arr.map(x=>typeof x==='string'?{id:x,done:false}:{id:x.id,done:!!x.done}).filter(x=>x.id);
+    }
+  }
+  return s;
+}
+function save(){localStorage.setItem('srujan-jee-command-center',JSON.stringify(state));}
+function fmtPct(n){return (Math.round(n*10)/10).toFixed(1).replace('.0','')+'%'}
+function chapterProgress(c){
+  if(typeof c.progressOverride==='number') return Math.max(0,Math.min(1,c.progressOverride));
+  const core=[c.theory,c.notes,c.module,c.pyq];
+  return core.filter(Boolean).length/core.length;
+}
+function subjectProgress(s){
+  const a=state.chapters[s]; return a.reduce((sum,c)=>sum+chapterProgress(c),0)/(a.length||1);
+}
+function overallProgress(){
+  const all=Object.keys(subjectMeta);return all.reduce((a,s)=>a+subjectProgress(s),0)/all.length;
+}
+function daysLeft(){
+  const now=new Date();const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  return Math.max(0,Math.ceil((TARGET-start)/86400000));
+}
+function statusClass(s){return 'status-'+s}
+function statusLabel(s){return s==='green'?'Strong':s==='orange'?'Developing':'Weak'}
+function getChapter(s,id){return state.chapters[s].find(c=>c.id===id)}
+function localDateKey(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+function todayKey(){return localDateKey()}
+function dateFromKey(key){const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d)}
+function dateLabel(key){return dateFromKey(key).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function todayLabel(){return dateLabel(todayKey())}
+function showPage(page){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  const el=document.getElementById('page-'+page);if(el)el.classList.add('active');
+  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  if(page==='dashboard')renderDashboard();
+  if(page==='subjects')renderSubjectCards('subjectCardsLarge');
+  if(page==='planner')renderPlanner();
+  if(page==='weekly')renderWeekly();
+  if(page==='priority')renderPriority();
+  if(page==='mistakes')renderMistakes();
+  if(page==='mocks')renderMocks();
+}
+document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+
+function renderDashboard(){
+  document.getElementById('daysLeft').textContent=daysLeft();
+  document.getElementById('overallPct').textContent=fmtPct(overallProgress()*100/100);
+  const today=state.goals.filter(g=>g.date===todayKey());const done=today.filter(g=>g.done).length;
+  document.getElementById('goalCount').textContent=`${done}/${today.length}`;
+  document.getElementById('weakCount').textContent=Object.values(state.chapters).flat().filter(c=>c.status==='red').length;
+  renderSubjectCards('subjectCards');renderGoals('dashboardGoals');renderPriority('dashboardPriority',4);
+}
+function renderSubjectCards(target){
+  const el=document.getElementById(target);
+  el.innerHTML=Object.entries(subjectMeta).map(([s,m])=>{
+    const p=subjectProgress(s)*100;const chapters=state.chapters[s];
+    return `<div class="card subject-card"><div><div class="small">${m.icon} SUBJECT</div><div class="subject-name">${m.name}</div><div class="small">${m.subtitle}</div></div><div><div class="progress-track"><div class="progress-fill" style="width:${p}%"></div></div><div class="meta"><span>${fmtPct(p)}</span><span>${chapters.filter(c=>c.status==='red').length} weak</span></div><button class="btn" style="margin-top:10px;width:100%" onclick="openSubject('${s}')">Open ${m.name} →</button></div></div>`;
+  }).join('');
+}
+function openSubject(s){
+  currentSubject=s;
+  document.getElementById('subjectTitle').textContent=subjectMeta[s].name;
+  document.getElementById('subjectSubtitle').textContent=subjectMeta[s].subtitle;
+  document.getElementById('subjectPctChip').textContent=fmtPct(subjectProgress(s)*100);
+  const uf=document.getElementById('unitFilter');
+  uf.innerHTML='<option value="all">All units</option>'+[...new Set(state.chapters[s].map(c=>c.unit))].map(u=>`<option>${u}</option>`).join('');
+  document.getElementById('chapterSearch').value='';document.getElementById('statusFilter').value='all';uf.value='all';
+  renderSubjectTable();showPage('subject');
+}
+function renderSubjectTable(){
+  const q=(document.getElementById('chapterSearch').value||'').toLowerCase();
+  const sf=document.getElementById('statusFilter').value,uf=document.getElementById('unitFilter').value;
+  const arr=state.chapters[currentSubject].filter(c=>(!q||c.name.toLowerCase().includes(q))&&(sf==='all'||c.status===sf)&&(uf==='all'||c.unit===uf));
+  document.getElementById('chapterBody').innerHTML=arr.map(c=>`<tr>
+    <td>${String(c.index).padStart(2,'0')}</td>
+    <td><button class="chapter-link" onclick="openChapter('${c.id}')">${c.name}</button></td>
+    <td>${c.unit}</td>
+    <td><input class="check" type="checkbox" ${c.theory?'checked':''} onchange="toggleCore('${c.id}','theory')"></td>
+    <td><input class="check" type="checkbox" ${c.notes?'checked':''} onchange="toggleCore('${c.id}','notes')"></td>
+    <td><input class="check" type="checkbox" ${c.module?'checked':''} onchange="toggleCore('${c.id}','module')"></td>
+    <td><input class="check" type="checkbox" ${c.pyq?'checked':''} onchange="toggleCore('${c.id}','pyq')"></td>
+    <td><span class="chip">${c.revisions.length?c.revisions.length+' revision'+(c.revisions.length>1?'s':''):'—'}</span></td>
+    <td><button class="status-dot ${statusClass(c.status)}" onclick="cycleStatus('${c.id}')"><i></i>${statusLabel(c.status)}</button></td>
+    <td><strong>${Math.round(chapterProgress(c)*100)}%</strong></td>
+  </tr>`).join('')||`<tr><td colspan="10" class="empty">No chapters match.</td></tr>`;
+}
+function findSubjectByChapterId(id){return Object.keys(state.chapters).find(s=>state.chapters[s].some(c=>c.id===id))}
+function toggleCore(id,key){
+  const s=findSubjectByChapterId(id),c=getChapter(s,id);c[key]=!c[key];c.progressOverride=null;
+  if(chapterProgress(c)===1 && c.status!=='red')c.status='green';
+  save();renderSubjectTable();refreshAll();toast('Saved');
+}
+function cycleStatus(id){
+  const s=findSubjectByChapterId(id),c=getChapter(s,id);
+  c.status=c.status==='green'?'orange':c.status==='orange'?'red':'green';save();renderSubjectTable();refreshAll();
+}
+function refreshAll(){renderDashboard();if(document.getElementById('page-planner').classList.contains('active'))renderPlanner();if(document.getElementById('page-priority').classList.contains('active'))renderPriority();}
+
+function openChapter(id){
+  const s=findSubjectByChapterId(id),c=getChapter(s,id);currentChapterId=id;
+  const revisions=c.revisions.map((r,i)=>`<div class="revision-row"><span><strong>R${i+1}</strong>${r.date?' • '+r.date:''}</span><button class="btn" onclick="removeRevision('${id}',${i})">Remove</button></div>`).join('');
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">${subjectMeta[s].name} → ${c.unit}</div><h2>${c.name}</h2></div><button class="btn" onclick="closeModal()">✕</button></div>
+  <div class="progress-big">${Math.round(chapterProgress(c)*100)}%</div>
+  <div class="small">Core preparation completion</div>
+  <div class="milestones">
+    ${['theory','notes','module','pyq'].map(k=>`<div class="milestone"><label><input class="check" type="checkbox" ${c[k]?'checked':''} onchange="modalToggleCore('${id}','${k}')"> ${k==='pyq'?'JEE Main PYQs':k[0].toUpperCase()+k.slice(1)}</label></div>`).join('')}
+  </div>
+  <div class="field"><label>Chapter progress override (optional)</label><input class="range" id="chapterRange" type="range" min="0" max="100" step="25" value="${Math.round(chapterProgress(c)*100)}" oninput="document.getElementById('rangeValue').textContent=this.value+'%'"><div class="small">Use this only when a chapter is genuinely between milestones. Otherwise the four checkboxes calculate progress.</div><strong id="rangeValue">${Math.round(chapterProgress(c)*100)}%</strong></div>
+  <hr><div class="detail-grid"><div class="detail-box"><h3>Status</h3><button class="status-dot ${statusClass(c.status)}" onclick="modalCycleStatus('${id}')"><i></i>${statusLabel(c.status)}</button></div><div class="detail-box"><h3>Revisions</h3><strong>${c.revisions.length}</strong></div></div>
+  <div class="detail-box" style="margin-top:12px"><h3>Revision history</h3>${revisions||'<div class="small">No revisions yet.</div>'}<button class="btn dark" style="margin-top:10px" onclick="addRevision('${id}')">+ Add revision</button></div>
+  <div class="field" style="margin-top:12px"><label>Quick notes</label><textarea id="chapterNotes" placeholder="What do you need to remember about this chapter?">${c.notesText||''}</textarea></div>
+  <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="saveChapterModal('${id}')">Save chapter</button></div>`;
+  openModal();
+}
+function modalToggleCore(id,key){const s=findSubjectByChapterId(id),c=getChapter(s,id);c[key]=!c[key];c.progressOverride=null;openChapter(id);save();}
+function modalCycleStatus(id){cycleStatus(id);openChapter(id)}
+function saveChapterModal(id){
+  const s=findSubjectByChapterId(id),c=getChapter(s,id);const r=Number(document.getElementById('chapterRange').value);
+  c.progressOverride=r===Math.round(chapterProgress(c)*100)&&r!==25&&r!==50&&r!==75?c.progressOverride:null;
+  if(r!==Math.round(([c.theory,c.notes,c.module,c.pyq].filter(Boolean).length/4)*100))c.progressOverride=r/100;
+  c.notesText=document.getElementById('chapterNotes').value;save();closeModal();refreshAll();if(document.getElementById('page-subject').classList.contains('active')){document.getElementById('subjectPctChip').textContent=fmtPct(subjectProgress(s)*100);renderSubjectTable()}toast('Chapter saved');
+}
+function addRevision(id){
+  const s=findSubjectByChapterId(id),c=getChapter(s,id);c.revisions.push({n:c.revisions.length+1,date:new Date().toLocaleDateString()});save();openChapter(id);refreshAll();toast('Revision added');
+}
+function removeRevision(id,i){
+  const s=findSubjectByChapterId(id),c=getChapter(s,id);c.revisions.splice(i,1);c.revisions.forEach((r,j)=>r.n=j+1);save();openChapter(id);refreshAll();
+}
+
+let plannerDateKey=todayKey();
+function renderGoals(target){
+  const arr=state.goals.filter(g=>g.date===todayKey());
+  document.getElementById(target).innerHTML=arr.length?arr.map(g=>goalHTML(g)).join(''):'<div class="empty">No goals yet. Add the few things you actually intend to finish today.</div>';
+}
+function goalHTML(g){return `<div class="goal-item ${g.done?'done':''}"><input class="check" type="checkbox" ${g.done?'checked':''} onchange="toggleGoal('${g.id}')"><div class="goal-text"><strong>${escapeHtml(g.text)}</strong><div class="small">${g.subject?subjectMeta[g.subject].name:''}${g.chapter?' • '+escapeHtml(g.chapter):''}</div></div><button class="btn" onclick="deleteGoal('${g.id}')">×</button></div>`}
+function openGoalModal(){
+  const label=dateLabel(plannerDateKey);
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Daily planner</div><h2>Add goal for ${escapeHtml(label)}</h2></div><button class="btn" onclick="closeModal()">✕</button></div>
+  <div class="form-grid"><div class="field full"><label>Goal</label><input id="goalText" placeholder="e.g. Finish 40 AC PYQs"></div><div class="field"><label>Subject</label><select id="goalSubject"><option value="">None</option>${Object.entries(subjectMeta).map(([s,m])=>`<option value="${s}">${m.name}</option>`).join('')}</select></div><div class="field"><label>Chapter (optional)</label><input id="goalChapter" placeholder="Chapter name"></div></div>
+  <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="saveGoal()">Add goal</button></div>`;openModal();document.getElementById('goalText').focus();
+}
+function saveGoal(){const text=document.getElementById('goalText').value.trim();if(!text)return;state.goals.push({id:crypto.randomUUID(),date:plannerDateKey,text,subject:document.getElementById('goalSubject').value,chapter:document.getElementById('goalChapter').value.trim(),done:false});save();closeModal();refreshAll();toast('Goal added')}
+function toggleGoal(id){const g=state.goals.find(x=>x.id===id);if(g)g.done=!g.done;save();refreshAll();if(document.getElementById('page-planner').classList.contains('active'))renderPlanner()}
+function deleteGoal(id){state.goals=state.goals.filter(g=>g.id!==id);save();refreshAll();renderPlanner()}
+function setPlannerDate(key){if(!/^\d{4}-\d{2}-\d{2}$/.test(key))return;plannerDateKey=key;renderPlanner()}
+function changePlannerDate(delta){const d=dateFromKey(plannerDateKey);d.setDate(d.getDate()+delta);setPlannerDate(localDateKey(d))}
+
+let weeklyKey=mondayKey(todayKey());
+let weeklySubject='physics';
+function mondayKey(key){
+  const d=dateFromKey(key);const day=d.getDay();d.setDate(d.getDate()-(day===0?6:day-1));return localDateKey(d);
+}
+function weekRangeLabel(key){
+  const start=dateFromKey(key),end=new Date(start);end.setDate(start.getDate()+6);
+  const opts={day:'numeric',month:'short'};
+  return `${start.toLocaleDateString(undefined,opts)} – ${end.toLocaleDateString(undefined,opts)}${start.getFullYear()===end.getFullYear()?' '+end.getFullYear():''}`;
+}
+function ensureWeeklyPlan(key){
+  if(!state.weeklyPlans[key])state.weeklyPlans[key]={physics:[],chemistry:[],maths:[]};
+  for(const sub of Object.keys(subjectMeta))if(!Array.isArray(state.weeklyPlans[key][sub]))state.weeklyPlans[key][sub]=[];
+  return state.weeklyPlans[key];
+}
+function weeklyData(sub){
+  const plan=ensureWeeklyPlan(weeklyKey)[sub]||[];const chapters=state.chapters[sub];
+  return plan.map(item=>{const c=chapters.find(x=>x.id===item.id);return c?{...item,c}:null}).filter(Boolean);
+}
+function renderWeekly(){
+  weeklyKey=mondayKey(weeklyKey);const thisWeek=mondayKey(todayKey());
+  document.getElementById('weeklyTitle').textContent=weeklyKey===thisWeek?'This week':'Week of '+dateFromKey(weeklyKey).toLocaleDateString(undefined,{day:'numeric',month:'long'});
+  document.getElementById('weeklyRange').textContent=weekRangeLabel(weeklyKey);
+  document.getElementById('weeklyTabs').innerHTML=Object.entries(subjectMeta).map(([s,m])=>`<button class="weekly-tab ${weeklySubject===s?'active':''}" onclick="setWeeklySubject('${s}')">${m.icon} ${m.name}</button>`).join('');
+  document.getElementById('weeklySubjectTitle').textContent=subjectMeta[weeklySubject].name;
+  const arr=weeklyData(weeklySubject),done=arr.filter(x=>x.done).length;
+  document.getElementById('weeklySummary').textContent=`${done}/${arr.length} done`;
+  document.getElementById('weeklyList').innerHTML=arr.length?arr.map(x=>`<div class="weekly-item ${x.done?'done':''}"><input class="check" type="checkbox" ${x.done?'checked':''} onchange="toggleWeekly('${weeklySubject}','${x.id}')"><div class="weekly-chapter">${escapeHtml(x.c.name)}<div class="small">${escapeHtml(x.c.unit)}</div></div><button class="btn" onclick="removeWeekly('${weeklySubject}','${x.id}')">×</button></div>`).join(''):'<div class="empty">No chapters planned for this subject yet. Add the chapters you want finished this week.</div>';
+  const all=Object.entries(subjectMeta).flatMap(([s])=>weeklyData(s).map(x=>({...x,s})));const total=all.length,allDone=all.filter(x=>x.done).length;
+  document.getElementById('weeklyStats').innerHTML=`<div class="weekly-stat"><strong>${total}</strong><span>planned</span></div><div class="weekly-stat"><strong>${allDone}</strong><span>done</span></div><div class="weekly-stat"><strong>${total-allDone}</strong><span>remaining</span></div>`;
+  document.getElementById('weeklyNote').textContent=total?`You have ${total} chapter${total===1?'':'s'} mapped across this week. Use the subject tabs to keep each subject separate; checking a chapter here marks the weekly task done without changing the chapter's core preparation progress.`:'A blank week is intentional. Map only the chapters you genuinely want to finish, then use the daily planner for the individual work inside those chapters.';
+}
+function setWeekly(key){weeklyKey=mondayKey(key);renderWeekly()}
+function changeWeekly(delta){const d=dateFromKey(weeklyKey);d.setDate(d.getDate()+delta*7);setWeekly(localDateKey(d))}
+function setWeeklySubject(s){if(subjectMeta[s]){weeklySubject=s;renderWeekly()}}
+function openWeeklyAddModal(){
+  const plan=ensureWeeklyPlan(weeklyKey)[weeklySubject];const ids=new Set(plan.map(x=>x.id));
+  const options=state.chapters[weeklySubject].filter(c=>!ids.has(c.id)).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Weekly roadmap · ${subjectMeta[weeklySubject].name}</div><h2>Add a chapter</h2></div><button class="btn" onclick="closeModal()">✕</button></div><div class="field"><label>Chapter</label><select id="weeklyChapter">${options||'<option value="">All chapters already planned</option>'}</select></div><div class="small" style="margin-top:10px">Week: ${escapeHtml(weekRangeLabel(weeklyKey))}. Add only chapters you realistically want to finish during this week.</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="saveWeeklyChapter()" ${options?'':'disabled'}>Add chapter</button></div>`;openModal();
+}
+function saveWeeklyChapter(){const id=document.getElementById('weeklyChapter').value;if(!id)return;const plan=ensureWeeklyPlan(weeklyKey)[weeklySubject];if(!plan.some(x=>x.id===id))plan.push({id,done:false});save();closeModal();renderWeekly();toast('Chapter added to week')}
+function toggleWeekly(sub,id){const item=ensureWeeklyPlan(weeklyKey)[sub].find(x=>x.id===id);if(item)item.done=!item.done;save();renderWeekly()}
+function removeWeekly(sub,id){const plan=ensureWeeklyPlan(weeklyKey)[sub];state.weeklyPlans[weeklyKey][sub]=plan.filter(x=>x.id!==id);save();renderWeekly();toast('Removed from week')}
+
+function defaultPriorityIds(){
+  return Object.entries(state.chapters).flatMap(([s,arr])=>arr.map(c=>{
+    const p=chapterProgress(c);let score=(1-p)*70+(c.status==='red'?30:c.status==='orange'?15:0);
+    if(c.revisions.length===0)score+=5;
+    return {c,score};
+  })).sort((a,b)=>b.score-a.score).slice(0,10).map(x=>x.c.id);
+}
+function ensurePriorityQueue(){
+  if(!Array.isArray(state.priorityQueue))state.priorityQueue=[];
+  if(state.priorityQueue.length===0){state.priorityQueue=defaultPriorityIds();save();}
+  const allIds=new Set(Object.values(state.chapters).flat().map(c=>c.id));
+  state.priorityQueue=state.priorityQueue.filter(id=>allIds.has(id));
+}
+function priorityData(){
+  ensurePriorityQueue();
+  return state.priorityQueue.map(id=>{const s=findSubjectByChapterId(id),c=s?getChapter(s,id):null;return c?{s,c}:null}).filter(Boolean);
+}
+function priorityHTML(x,index,total,target='priorityFull'){
+  const {s,c}=x;
+  return `<div class="priority-item"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><strong>${index+1}. ${subjectMeta[s].name} · ${escapeHtml(c.name)}</strong><div class="small">${escapeHtml(c.unit)} · ${statusLabel(c.status)} · ${Math.round(chapterProgress(c)*100)}% complete</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" ${index===0?'disabled':''} onclick="movePriority('${c.id}',-1)">↑</button><button class="btn" ${index===total-1?'disabled':''} onclick="movePriority('${c.id}',1)">↓</button><button class="btn" onclick="removePriority('${c.id}')">Remove</button></div></div><div class="progress-track"><div class="progress-fill" style="width:${Math.round(chapterProgress(c)*100)}%"></div></div><button class="btn" onclick="openChapter('${c.id}')">Open chapter</button></div>`;
+}
+function renderPriority(target='priorityFull',limit=10){
+  const arr=priorityData().slice(0,limit);
+  document.getElementById(target).innerHTML=arr.map((x,i)=>priorityHTML(x,i,arr.length,target)).join('')||'<div class="empty">Nothing in your priority queue. Add the chapters you want to focus on.</div>';
+}
+function openPriorityModal(){
+  ensurePriorityQueue();
+  const queued=new Set(state.priorityQueue);
+  const options=Object.entries(subjectMeta).map(([s,m])=>`<optgroup label="${m.name}">${state.chapters[s].filter(c=>!queued.has(c.id)).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</optgroup>`).join('');
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Priority Queue</div><h2>Add a chapter</h2></div><button class="btn" onclick="closeModal()">✕</button></div><div class="field"><label>Chapter</label><select id="priorityChapter">${options||'<option value="">All chapters are already queued</option>'}</select></div><div class="small" style="margin-top:10px">The queue is manual. Adding a chapter puts it at the bottom; use ↑/↓ to reorder it.</div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="savePriority()" ${options?'':'disabled'}>Add chapter</button></div>`;
+  openModal();
+}
+function savePriority(){const id=document.getElementById('priorityChapter').value;if(!id)return;ensurePriorityQueue();if(!state.priorityQueue.includes(id))state.priorityQueue.push(id);save();closeModal();refreshAll();toast('Priority added')}
+function movePriority(id,delta){ensurePriorityQueue();const i=state.priorityQueue.indexOf(id),j=i+delta;if(i<0||j<0||j>=state.priorityQueue.length)return;[state.priorityQueue[i],state.priorityQueue[j]]=[state.priorityQueue[j],state.priorityQueue[i]];save();refreshAll();}
+function removePriority(id){state.priorityQueue=state.priorityQueue.filter(x=>x!==id);save();refreshAll();toast('Removed from priority queue')}
+
+function renderPlanner(){
+  document.getElementById('plannerDate').textContent=dateLabel(plannerDateKey);
+  const picker=document.getElementById('plannerDatePicker');if(picker)picker.value=plannerDateKey;
+  const arr=state.goals.filter(g=>g.date===plannerDateKey);const done=arr.filter(g=>g.done).length;
+  document.getElementById('plannerSummary').textContent=`${done}/${arr.length} complete`;
+  document.getElementById('plannerGoals').innerHTML=arr.length?arr.map(g=>goalHTML(g)).join(''):'<div class="empty">No goals saved for this date.</div>';
+  document.getElementById('routineNote').textContent='Browse backward or forward to review your exact goals for any saved day. Nothing is cleared when the date changes.';
+}
+function renderMistakes(){
+  const el=document.getElementById('mistakeList');el.innerHTML=state.mistakes.length?state.mistakes.slice().reverse().map(m=>`<div class="mistake-item"><div style="display:flex;justify-content:space-between;gap:10px"><div><strong>${escapeHtml(m.chapter||'General')}</strong><div class="small">${subjectMeta[m.subject]?.name||'—'}${m.note?' · '+escapeHtml(m.note):''}</div></div><button class="btn" onclick="deleteMistake('${m.id}')">×</button></div><div style="margin-top:8px;display:flex;justify-content:space-between;gap:10px;align-items:center"><span class="small">${escapeHtml(m.text)}</span><label class="chip"><input class="check" type="checkbox" ${m.resolved?'checked':''} onchange="toggleMistake('${m.id}')"> Resolved</label></div></div>`).join(''):'<div class="empty">No mistakes logged. Add only mistakes worth remembering.</div>';
+}
+function openMistakeModal(){
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Mistake log</div><h2>Add a useful mistake</h2></div><button class="btn" onclick="closeModal()">✕</button></div>
+  <div class="form-grid"><div class="field"><label>Subject</label><select id="mistSubject">${Object.entries(subjectMeta).map(([s,m])=>`<option value="${s}">${m.name}</option>`).join('')}</select></div><div class="field"><label>Chapter</label><input id="mistChapter" placeholder="e.g. Rotation"></div><div class="field full"><label>What went wrong?</label><textarea id="mistText" placeholder="One short description"></textarea></div><div class="field full"><label>Why / takeaway (optional)</label><input id="mistNote" placeholder="Concept gap, missed condition, etc."></div></div>
+  <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="saveMistake()">Add mistake</button></div>`;openModal();
+}
+function saveMistake(){const text=document.getElementById('mistText').value.trim();if(!text)return;state.mistakes.push({id:crypto.randomUUID(),subject:document.getElementById('mistSubject').value,chapter:document.getElementById('mistChapter').value.trim(),text,note:document.getElementById('mistNote').value.trim(),resolved:false});save();closeModal();renderMistakes();toast('Mistake saved')}
+function toggleMistake(id){const m=state.mistakes.find(x=>x.id===id);if(m)m.resolved=!m.resolved;save();renderMistakes()}
+function deleteMistake(id){state.mistakes=state.mistakes.filter(x=>x.id!==id);save();renderMistakes()}
+
+function renderMocks(){
+  const el=document.getElementById('mockList');const arr=state.mocks.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  el.innerHTML=arr.length?arr.slice().reverse().map(m=>`<div class="mock-item"><div><strong>${escapeHtml(m.name)}</strong><div class="small">${m.date}${m.topic?' · '+escapeHtml(m.topic):''}</div></div><strong>${m.score}${m.max?'/'+m.max:''}</strong><button class="btn" onclick="deleteMock('${m.id}')">×</button></div>`).join(''):'<div class="empty">No mocks yet. Add scores after tests.</div>';
+  drawChart(arr);
+}
+function openMockModal(){
+  document.getElementById('modal').innerHTML=`<div class="modal-head"><div><div class="small">Mock score</div><h2>Add mock</h2></div><button class="btn" onclick="closeModal()">✕</button></div>
+  <div class="form-grid"><div class="field"><label>Name</label><input id="mockName" placeholder="Sunday Test 01"></div><div class="field"><label>Date</label><input id="mockDate" type="date" value="${todayKey()}"></div><div class="field"><label>Score</label><input id="mockScore" type="number" min="0" placeholder="e.g. 210"></div><div class="field"><label>Max</label><input id="mockMax" type="number" min="1" value="300"></div><div class="field full"><label>Topics / syllabus (optional)</label><input id="mockTopic" placeholder="Full syllabus / chapters tested"></div></div>
+  <div class="actions" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn dark" onclick="saveMock()">Add mock</button></div>`;openModal();
+}
+function saveMock(){const name=document.getElementById('mockName').value.trim()||'Mock';const score=Number(document.getElementById('mockScore').value);if(!Number.isFinite(score))return;state.mocks.push({id:crypto.randomUUID(),name,date:document.getElementById('mockDate').value||todayKey(),score,max:Number(document.getElementById('mockMax').value)||300,topic:document.getElementById('mockTopic').value.trim()});save();closeModal();renderMocks();toast('Mock added')}
+function deleteMock(id){state.mocks=state.mocks.filter(x=>x.id!==id);save();renderMocks()}
+function drawChart(arr){
+  const canvas=document.getElementById('scoreCanvas');if(!canvas)return;const dpr=devicePixelRatio||1;const w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#e7e7e7';ctx.lineWidth=1;for(let i=1;i<5;i++){const y=i*h/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  if(!arr.length){ctx.fillStyle='#777';ctx.font='12px system-ui';ctx.fillText('Add a mock to see the score trend.',18,30);return}
+  const max=Math.max(...arr.map(x=>x.score),300);const min=0;const pad=28;const xStep=arr.length===1?0:(w-pad*2)/(arr.length-1);
+  ctx.strokeStyle='#111';ctx.lineWidth=2;ctx.beginPath();
+  arr.forEach((m,i)=>{const x=pad+i*xStep,y=h-pad-(m.score-min)/(max-min)*(h-pad*2);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();
+  arr.forEach((m,i)=>{const x=pad+i*xStep,y=h-pad-(m.score-min)/(max-min)*(h-pad*2);ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.fillText(String(m.score),x-8,y-9)});
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='srujan-jee-tracker-backup.json';a.click();URL.revokeObjectURL(a.href);toast('Backup exported');
+}
+function importData(e){
+  const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=normalizeState(JSON.parse(r.result));save();renderDashboard();toast('Backup imported')}catch(err){alert('That file is not a valid tracker backup.')}};r.readAsText(f);
+}
+function resetAll(){if(!confirm('Reset all tracker data and restore the seeded preparation state?'))return;state=initialState();save();renderDashboard();toast('Tracker reset')}
+function openModal(){document.getElementById('modalBackdrop').classList.add('open')}
+function closeModal(){document.getElementById('modalBackdrop').classList.remove('open')}
+function backdropClose(e){if(e.target.id==='modalBackdrop')closeModal()}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>el.classList.remove('show'),1400)}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+window.addEventListener('resize',()=>{if(document.getElementById('page-mocks').classList.contains('active'))drawChart(state.mocks.slice().sort((a,b)=>a.date.localeCompare(b.date)))});
+renderDashboard();
+</script>
+</body>
+</html>
